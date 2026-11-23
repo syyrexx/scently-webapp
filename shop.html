@@ -106,6 +106,8 @@ function render() {
 }
 
 loadProducts().then((p) => { P = p; render(); });
+Telegram.WebApp.ready();
+Telegram.WebApp.expand();
 </script>
 </body>
 </html>

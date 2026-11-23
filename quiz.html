@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scently — подбор аромата</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Playfair+Display:ital,wght@1,500&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+body{background:#FBF6EF}
+.cta{background:#FBF6EF}
+.prog{display:flex;gap:6px;margin:0 0 6px}.prog i{flex:1;height:4px;border-radius:2px;background:#E2D2BC}.prog i.on{background:#4F2D1E}
+.ans{display:block;width:100%;min-height:64px;border-radius:14px;background:#F3E7D7;border:2px solid transparent;text-align:left;padding:12px 16px;cursor:pointer;color:#4F2D1E;font-family:inherit;margin-bottom:10px}
+.ans b{display:block;font-size:17px}
+.res{background:#F3E7D7;border-radius:16px;padding:14px;margin-bottom:12px}
+.res .pic{width:76px;height:96px;background:#FBF6EF;flex-shrink:0}
+.badge{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;background:#3F5239;color:#FBF6EF;border-radius:6px;padding:3px 7px;margin-bottom:4px}
+.zbtn{flex:1;min-height:48px;border-radius:12px;background:#FBF6EF;border:2px solid #CDB89D;color:#4F2D1E;cursor:pointer;font:600 14px 'Golos Text',sans-serif}
+.hero{height:300px;border-radius:20px;background:#4F2D1E;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;position:relative;overflow:hidden}
+.btn{display:block;width:100%;height:54px;border-radius:27px;font:600 16px 'Golos Text',sans-serif;cursor:pointer;margin-top:10px}
+.btn.dark{background:#4F2D1E;color:#F3E7D7;border:none}.btn.line{background:transparent;color:#4F2D1E;border:1px solid #4F2D1E}
+.link{display:block;width:100%;min-height:44px;border:none;background:transparent;color:#4F2D1E;font:14px 'Golos Text',sans-serif;text-decoration:underline;cursor:pointer;margin-top:10px}
+form input[type=text],form input[type=tel],textarea{background:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <button class="iconbtn hidden" id="back" aria-label="Назад"></button>
+    <span class="serif logo">Scently</span>
+    <span style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#3F5239;font-weight:600">Предзаказ</span>
+  </div>
+  <main id="view"></main>
+</div>
+<div class="cta hidden" id="cta"><button type="button"></button></div>
+<script src="common.js"></script>
+<script>
+const QUESTIONS = [
+  { key: 'gender', title: 'Для кого аромат?', options: [['her', 'Для неё', 'женские ароматы'], ['him', 'Для него', 'мужские ароматы'], ['uni', 'Не важно', 'унисекс подойдёт']] },
+  { key: 'family', title: 'Какой аромат вам нравится?', options: [['fresh', 'Свежий', 'цитрусы, чай, морской воздух'], ['sweet', 'Сладкий', 'ваниль, карамель, фрукты'], ['woody', 'Древесный', 'кедр, сандал, пряности'], ['floral', 'Цветочный', 'роза, пион, жасмин']] },
+  { key: 'time', title: 'Когда будете носить?', options: [['day', 'Днём', 'работа, учёба, прогулки'], ['evening', 'Вечером', 'встречи, свидания, праздники'], ['any', 'Всегда', 'один аромат на всё']] }
+];
+let P = [], S = { screen: 'intro', q: 0, ans: {}, all: false, pick: null, form: {}, err: '', from: 'intro' };
+
+function go(screen) { if (S.screen === 'checkout') S.form = readForm(); S.screen = screen; S.err = ''; render(); window.scrollTo(0, 0); }
+function score(p) {
+  const a = S.ans; let s = 0;
+  if (a.gender === 'uni' || p.gender === a.gender || p.gender === 'uni') s += 2;
+  if (p.family === a.family) s += 3;
+  if (a.time === 'any' || p.time === a.time || p.time === 'any') s += 1;
+  return s;
+}
+function backFn() {
+  if (S.screen === 'quiz') { if (S.q > 0) { S.q--; render(); } else go('intro'); }
+  else if (S.screen === 'results') { if (S.all) go('intro'); else { S.q = 2; go('quiz'); } }
+  else if (S.screen === 'checkout') go('results');
+  else if (S.screen === 'contact') go(S.from);
+}
+
+function render() {
+  const v = $('#view');
+  const back = $('#back');
+  back.innerHTML = BACK_ICON;
+  back.classList.toggle('hidden', !['quiz', 'results', 'checkout', 'contact'].includes(S.screen));
+  back.onclick = backFn;
+  setCta(null);
+
+  if (S.screen === 'intro') {
+    v.innerHTML = `<div class="hero"><div style="position:absolute;right:18px;top:24px">${bottle({ c1: '#6B4A3A', c2: '#5C7154' }, 140)}</div>
+      <div class="serif" style="position:relative;font-size:32px;line-height:1.1;color:#F3E7D7">Найдём ваш аромат за 3 вопроса</div>
+      <div style="position:relative;font-size:14px;color:#E2CDB4;margin-top:10px">Оригиналы с документами · поставка ${DELIVERY_DATE}</div></div>
+      <button class="btn dark" id="start" style="margin-top:18px">Подобрать аромат</button>
+      <button class="btn line" id="all">Смотреть все ароматы</button>
+      <button class="link" id="contact">Не нашли свой аромат? Напишите нам</button>`;
+    $('#start').onclick = () => { S.q = 0; S.ans = {}; go('quiz'); };
+    $('#all').onclick = () => { S.all = true; go('results'); };
+    $('#contact').onclick = () => { S.from = 'intro'; go('contact'); };
+  }
+
+  if (S.screen === 'quiz') {
+    const q = QUESTIONS[S.q];
+    v.innerHTML = `<div class="prog">${[0, 1, 2].map((i) => `<i class="${i <= S.q ? 'on' : ''}"></i>`).join('')}</div>
+      <p class="muted" style="margin:14px 0 0">Вопрос ${S.q + 1} из 3</p>
+      <div class="serif" style="font-size:30px;line-height:1.15;margin:6px 0 22px">${q.title}</div>
+      ${q.options.map(([val, l, h]) => `<button class="ans" data-v="${val}" style="${S.ans[q.key] === val ? 'border-color:#4F2D1E' : ''}"><b>${l}</b><span class="muted">${h}</span></button>`).join('')}`;
+    v.querySelectorAll('[data-v]').forEach((b) => (b.onclick = () => {
+      S.ans[q.key] = b.dataset.v;
+      if (S.q < 2) { S.q++; render(); } else { S.all = false; go('results'); }
+    }));
+  }
+
+  if (S.screen === 'results') {
+    const list = S.all ? P.slice() : P.slice().sort((x, y) => score(y) - score(x)).slice(0, 3);
+    v.innerHTML = `<div class="serif" style="font-size:30px;line-height:1.15;margin-top:6px">${S.all ? 'Все ароматы' : 'Ваши ароматы'}</div>
+      <p class="muted" style="margin:6px 0 16px">${S.all ? 'Выберите аромат и объём' : 'Подобрали по вашим ответам — выберите объём'}</p>
+      ${list.map((p, i) => `<div class="res"><div style="display:flex;gap:14px;align-items:center"><div class="pic" style="border-radius:12px">${bottle(p, 44)}</div><div>
+        ${!S.all && i === 0 ? '<span class="badge">Лучшее совпадение</span>' : ''}
+        <div class="serif" style="font-size:21px">${esc(p.name)}</div><div class="muted">${esc(p.brand)} · ${esc(p.familyLabel)}</div>
+        <div style="font-size:13px;margin-top:4px;line-height:1.4">${esc(p.desc)}</div></div></div>
+        <div style="display:flex;gap:8px;margin-top:10px">${p.sizes.map((z) => `<button class="zbtn" data-p="${p.id}" data-ml="${z.ml}">${z.ml} мл · ${money(z.price)}</button>`).join('')}</div></div>`).join('')}
+      <button class="dashed" id="contact"><b>Ничего не подошло?</b><span class="muted">Напишите, что ищете, — привезём под заказ</span></button>
+      <button class="link" id="again">Пройти подбор заново</button>`;
+    v.querySelectorAll('[data-ml]').forEach((b) => (b.onclick = () => {
+      const p = P.find((x) => x.id === b.dataset.p); const z = p.sizes.find((s) => s.ml === Number(b.dataset.ml));
+      S.pick = { id: p.id, name: p.name, ml: z.ml, price: z.price }; go('checkout');
+    }));
+    $('#contact').onclick = () => { S.from = 'results'; go('contact'); };
+    $('#again').onclick = () => { S.q = 0; S.ans = {}; go('quiz'); };
+  }
+
+  if (S.screen === 'checkout') {
+    const promoOk = (S.form.promo || '') === PROMO;
+    const total = promoOk ? S.pick.price - Math.round(S.pick.price * 0.1) : S.pick.price;
+    v.innerHTML = `<h1 class="serif">Ваш предзаказ</h1>
+      <div class="box" style="background:#F3E7D7;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><b>${esc(S.pick.name)}</b><div class="muted">${S.pick.ml} мл · доставка 0 ₸</div></div><div class="serif" style="font-size:20px">${money(S.pick.price)}</div></div>
+      ${formHtml(S.form)}
+      <div class="row big"><span>К оплате${promoOk ? ' (ПЕРВЫЙ −10%)' : ''}</span><span>${money(total)}</span></div>
+      <p class="muted" style="font-size:12px">Оплата по ссылке Kaspi — пришлём в чат после подтверждения</p>
+      ${S.err ? `<div class="err" role="alert">${S.err}</div>` : ''}`;
+    $('#f').elements.promo.onchange = () => { S.form = readForm(); S.err = ''; render(); };
+    setCta('Оформить предзаказ · ' + money(total), () => {
+      S.form = readForm(); S.err = validate(S.form);
+      if (S.err) { render(); return; }
+      send({ type: 'order', flow: 'C', items: [{ id: S.pick.id, ml: S.pick.ml, qty: 1 }], form: S.form });
+    });
+  }
+
+  if (S.screen === 'contact') {
+    v.innerHTML = contactHtml();
+    setCta('Отправить', sendContact);
+  }
+}
+
+loadProducts().then((p) => { P = p; render(); });
+</script>
+</body>
+</html>

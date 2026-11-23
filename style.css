@@ -1,0 +1,43 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:'Golos Text',system-ui,sans-serif;color:#4F2D1E;background:#F3E7D7;-webkit-font-smoothing:antialiased}
+.serif{font-family:'Playfair Display',serif;font-style:italic;font-weight:500}
+.app{max-width:480px;margin:0 auto;min-height:100vh;padding:14px 16px 110px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.logo{font-size:28px;flex:1}
+.iconbtn{width:44px;height:44px;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.cartbtn{height:44px;border:1px solid #D8C6AE;border-radius:22px;background:#FBF6EF;display:flex;align-items:center;gap:6px;padding:0 14px;font:600 14px 'Golos Text',sans-serif;color:#4F2D1E;cursor:pointer}
+.banner{background:#4F2D1E;color:#F3E7D7;border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.banner small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#E2CDB4}
+.banner .serif{font-size:20px;margin-top:4px}
+.banner p{margin:6px 0 0;font-size:13px;color:#E2CDB4}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{height:44px;padding:0 16px;border-radius:22px;font:14px 'Golos Text',sans-serif;cursor:pointer;background:#FBF6EF;color:#4F2D1E;border:1px solid #D8C6AE}
+.chip.on{background:#4F2D1E;color:#F3E7D7;border-color:#4F2D1E}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:#FBF6EF;border:none;border-radius:14px;padding:10px;text-align:left;cursor:pointer;color:#4F2D1E;font-family:inherit}
+.pic{height:130px;border-radius:10px;background:#F3E7D7;display:flex;align-items:center;justify-content:center}
+.card b{display:block;font-size:15px;margin-top:10px}
+.muted{color:#7A6455;font-size:13px}
+.price{font-size:17px;margin-top:8px}
+.dashed{margin-top:18px;width:100%;border:1px dashed #A88B70;background:transparent;border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:#4F2D1E;font-family:inherit}
+.dashed b{display:block;font-size:15px}
+h1.serif{font-size:28px;margin:6px 0 14px}
+.sizes{display:flex;gap:10px;margin-top:8px}
+.size{flex:1;min-height:64px;border-radius:12px;cursor:pointer;font-family:inherit;text-align:left;padding:10px 14px;background:#FBF6EF;color:#4F2D1E;border:2px solid #D8C6AE}
+.size.on{background:#4F2D1E;color:#F3E7D7;border-color:#4F2D1E}
+.size b{display:block;font-size:16px}
+.line{background:#FBF6EF;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.qty{width:44px;height:44px;border:1px solid #D8C6AE;border-radius:22px;background:#F3E7D7;font-size:18px;color:#4F2D1E;cursor:pointer}
+.row{display:flex;justify-content:space-between;font-size:14px;margin-top:6px}
+.row.big{font-size:18px;font-weight:600;margin-top:8px}
+form label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;margin-bottom:12px}
+form input[type=text],form input[type=tel],textarea{height:46px;border:1px solid #D8C6AE;border-radius:10px;padding:0 12px;font:16px 'Golos Text',sans-serif;background:#FBF6EF;color:#4F2D1E}
+textarea{height:140px;padding:12px;resize:none;width:100%}
+label.check{flex-direction:row;align-items:flex-start;gap:10px;font-weight:400;line-height:1.4}
+label.check input{width:22px;height:22px;margin:0;accent-color:#4F2D1E;flex-shrink:0}
+.box{background:#FBF6EF;border-radius:14px;padding:14px}
+.err{color:#9B2C1F;font-size:13px;font-weight:600;margin-top:10px}
+.cta{position:fixed;left:0;right:0;bottom:0;padding:12px 16px 20px;background:#F3E7D7;border-top:1px solid #E2D2BC}
+.cta button{display:block;max-width:448px;margin:0 auto;width:100%;height:52px;border:none;border-radius:26px;background:#4F2D1E;color:#F3E7D7;font:600 16px 'Golos Text',sans-serif;cursor:pointer}
+.ok{color:#3F5239;font-weight:600}
+.hidden{display:none}

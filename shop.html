@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scently — магазин</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Playfair+Display:ital,wght@1,500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <button class="iconbtn hidden" id="back" aria-label="Назад"></button>
+    <span class="serif logo">Scently</span>
+    <button class="cartbtn" id="cartbtn" aria-label="Корзина">Корзина <span id="count">0</span></button>
+  </div>
+  <main id="view"></main>
+</div>
+<div class="cta hidden" id="cta"><button type="button"></button></div>
+<script src="common.js"></script>
+<script>
+const FILTERS = [['all', 'Все'], ['her', 'Для неё'], ['him', 'Для него'], ['uni', 'Унисекс']];
+let P = [], S = { screen: 'catalog', filter: 'all', pid: null, ml: null, cart: [], form: {}, err: '' };
+const BACK = { product: 'catalog', cart: 'catalog', checkout: 'cart', contact: 'catalog' };
+
+function go(screen) { if (S.screen === 'checkout') S.form = readForm(); S.screen = screen; S.err = ''; render(); window.scrollTo(0, 0); }
+function totals() {
+  const sub = S.cart.reduce((a, c) => a + c.price * c.qty, 0);
+  const disc = (S.form.promo || '') === PROMO ? Math.round(sub * 0.1) : 0;
+  return { sub, disc, total: sub - disc };
+}
+
+function render() {
+  const v = $('#view');
+  $('#count').textContent = S.cart.reduce((a, c) => a + c.qty, 0);
+  const back = $('#back');
+  back.innerHTML = BACK_ICON;
+  back.classList.toggle('hidden', !BACK[S.screen]);
+  back.onclick = () => go(BACK[S.screen]);
+  $('#cartbtn').onclick = () => go('cart');
+
+  if (S.screen === 'catalog') {
+    const list = P.filter((p) => S.filter === 'all' || p.gender === S.filter);
+    v.innerHTML = `<div class="banner"><small>Предзаказ</small><div class="serif">Оригиналы с документами</div><p>Поставка ${DELIVERY_DATE} · доставка по Павлодару бесплатно</p></div>
+    <div class="chips">${FILTERS.map(([k, l]) => `<button class="chip ${S.filter === k ? 'on' : ''}" data-f="${k}">${l}</button>`).join('')}</div>
+    <div class="grid">${list.map((p) => `<button class="card" data-p="${p.id}"><div class="pic">${bottle(p, 56)}</div><b>${esc(p.name)}</b><span class="muted">${esc(p.familyLabel)}</span><div class="serif price">от ${money(p.sizes[0].price)}</div></button>`).join('')}</div>
+    <button class="dashed" id="contact"><b>Не нашли свой аромат?</b><span class="muted">Напишите нам — привезём под заказ</span></button>`;
+    v.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { S.filter = b.dataset.f; render(); }));
+    v.querySelectorAll('[data-p]').forEach((b) => (b.onclick = () => { S.pid = b.dataset.p; S.ml = P.find((p) => p.id === S.pid).sizes[0].ml; go('product'); }));
+    $('#contact').onclick = () => go('contact');
+    setCta(null);
+  }
+
+  if (S.screen === 'product') {
+    const p = P.find((x) => x.id === S.pid);
+    const size = p.sizes.find((z) => z.ml === S.ml);
+    v.innerHTML = `<div class="pic" style="height:260px;background:#FBF6EF;border-radius:16px">${bottle(p, 110)}</div>
+    <p class="muted" style="margin:16px 0 0">${esc(p.brand)}</p>
+    <div class="serif" style="font-size:30px;margin-top:4px">${esc(p.name)}</div>
+    <p style="font-size:14px;line-height:1.5;margin:8px 0 0">${esc(p.desc)}</p>
+    <p class="muted" style="margin:8px 0 0">Ноты: ${esc(p.notes)}</p>
+    <p style="font-size:13px;font-weight:600;margin:18px 0 0">Объём</p>
+    <div class="sizes">${p.sizes.map((z) => `<button class="size ${z.ml === S.ml ? 'on' : ''}" data-ml="${z.ml}"><b>${z.ml} мл</b>${money(z.price)}</button>`).join('')}</div>
+    <p class="muted" style="font-size:12px;margin-top:14px">Предзаказ · поставка ${DELIVERY_DATE} · документы по запросу</p>`;
+    v.querySelectorAll('[data-ml]').forEach((b) => (b.onclick = () => { S.ml = Number(b.dataset.ml); render(); }));
+    setCta('В корзину · ' + money(size.price), () => {
+      const hit = S.cart.find((c) => c.id === p.id && c.ml === S.ml);
+      if (hit) hit.qty++; else S.cart.push({ id: p.id, name: p.name, ml: S.ml, price: size.price, qty: 1 });
+      go('cart');
+    });
+  }
+
+  if (S.screen === 'cart') {
+    const t = totals();
+    v.innerHTML = `<h1 class="serif">Корзина</h1>` + (S.cart.length ? S.cart.map((c, i) => `<div class="line"><div style="flex:1"><b>${esc(c.name)}</b><div class="muted">${c.ml} мл · ${money(c.price)}</div></div>
+      <button class="qty" data-dec="${i}" aria-label="Меньше">−</button><b>${c.qty}</b><button class="qty" data-inc="${i}" aria-label="Больше">+</button></div>`).join('') +
+      `<div class="row"><span>Доставка по Павлодару</span><span>0 ₸</span></div><div class="row big"><span>Итого</span><span>${money(t.sub)}</span></div>`
+      : `<div class="box">Корзина пуста. Выберите аромат в каталоге.</div>`);
+    v.querySelectorAll('[data-inc]').forEach((b) => (b.onclick = () => { S.cart[b.dataset.inc].qty++; render(); }));
+    v.querySelectorAll('[data-dec]').forEach((b) => (b.onclick = () => { const c = S.cart[b.dataset.dec]; c.qty--; if (!c.qty) S.cart.splice(b.dataset.dec, 1); render(); }));
+    setCta(S.cart.length ? 'Оформить предзаказ' : null, () => go('checkout'));
+  }
+
+  if (S.screen === 'checkout') {
+    const t = totals();
+    v.innerHTML = `<h1 class="serif">Оформление предзаказа</h1>${formHtml(S.form)}
+    <div class="box"><div class="row" style="margin:0"><span>Товары</span><span>${money(t.sub)}</span></div>
+    ${t.disc ? `<div class="row ok"><span>Промокод ${PROMO}</span><span>−${money(t.disc)}</span></div>` : ''}
+    <div class="row"><span>Доставка</span><span>0 ₸</span></div><div class="row big"><span>К оплате</span><span>${money(t.total)}</span></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Оплата по ссылке Kaspi — пришлём после подтверждения заказа</p></div>
+    ${S.err ? `<div class="err" role="alert">${S.err}</div>` : ''}`;
+    $('#f').elements.promo.onchange = () => { S.form = readForm(); S.err = ''; render(); };
+    setCta('Подтвердить · ' + money(t.total), () => {
+      S.form = readForm();
+      S.err = validate(S.form);
+      if (S.err) { render(); return; }
+      send({ type: 'order', flow: 'A', items: S.cart.map((c) => ({ id: c.id, ml: c.ml, qty: c.qty })), form: S.form });
+    });
+  }
+
+  if (S.screen === 'contact') {
+    v.innerHTML = contactHtml();
+    setCta('Отправить', sendContact);
+  }
+}
+
+loadProducts().then((p) => { P = p; render(); });
+</script>
+</body>
+</html>

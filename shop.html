@@ -27,7 +27,7 @@ const BACK = { product: 'catalog', cart: 'catalog', checkout: 'cart', contact: '
 function go(screen) { if (S.screen === 'checkout') S.form = readForm(); S.screen = screen; S.err = ''; render(); window.scrollTo(0, 0); }
 function totals() {
   const sub = S.cart.reduce((a, c) => a + c.price * c.qty, 0);
-  const disc = (S.form.promo || '') === PROMO ? Math.round(sub * 0.1) : 0;
+  const disc = promoApplies(S.form.promo) ? Math.round(sub * 0.1) : 0;
   return { sub, disc, total: sub - disc };
 }
 
@@ -84,7 +84,7 @@ function render() {
 
   if (S.screen === 'checkout') {
     const t = totals();
-    v.innerHTML = `<h1 class="serif">Оформление предзаказа</h1>${formHtml(S.form)}
+    v.innerHTML = `<h1 class="serif">Оформление предзаказа</h1>${formHtml(S.form)}${promoNote(S.form.promo)}
     <div class="box"><div class="row" style="margin:0"><span>Товары</span><span>${money(t.sub)}</span></div>
     ${t.disc ? `<div class="row ok"><span>Промокод ${PROMO}</span><span>−${money(t.disc)}</span></div>` : ''}
     <div class="row"><span>Доставка</span><span>0 ₸</span></div><div class="row big"><span>К оплате</span><span>${money(t.total)}</span></div>
@@ -106,8 +106,6 @@ function render() {
 }
 
 loadProducts().then((p) => { P = p; render(); });
-Telegram.WebApp.ready();
-Telegram.WebApp.expand();
 </script>
 </body>
 </html>

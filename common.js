@@ -3,6 +3,11 @@ const tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 const DELIVERY_DATE = '[ДАТА]';
 const PROMO = 'ПЕРВЫЙ';
+// The bot adds ?first=0 to the link when this customer already has an order: ПЕРВЫЙ is for the first order only.
+const FIRST_ORDER = new URLSearchParams(location.search).get('first') !== '0';
+const promoApplies = (code) => (code || '').toUpperCase() === PROMO && FIRST_ORDER;
+const promoNote = (code) => ((code || '').toUpperCase() === PROMO && !FIRST_ORDER)
+  ? `<div class="muted" style="font-size:12px;margin:-6px 0 12px">Промокод ${PROMO} действует только на первый заказ</div>` : '';
 const $ = (s) => document.querySelector(s);
 const money = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₸';
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

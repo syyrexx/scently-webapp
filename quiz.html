@@ -110,11 +110,11 @@ function render() {
   }
 
   if (S.screen === 'checkout') {
-    const promoOk = (S.form.promo || '') === PROMO;
+    const promoOk = promoApplies(S.form.promo);
     const total = promoOk ? S.pick.price - Math.round(S.pick.price * 0.1) : S.pick.price;
     v.innerHTML = `<h1 class="serif">Ваш предзаказ</h1>
       <div class="box" style="background:#F3E7D7;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><b>${esc(S.pick.name)}</b><div class="muted">${S.pick.ml} мл · доставка 0 ₸</div></div><div class="serif" style="font-size:20px">${money(S.pick.price)}</div></div>
-      ${formHtml(S.form)}
+      ${formHtml(S.form)}${promoNote(S.form.promo)}
       <div class="row big"><span>К оплате${promoOk ? ' (ПЕРВЫЙ −10%)' : ''}</span><span>${money(total)}</span></div>
       <p class="muted" style="font-size:12px">Оплата по ссылке Kaspi — пришлём в чат после подтверждения</p>
       ${S.err ? `<div class="err" role="alert">${S.err}</div>` : ''}`;
